@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Trip } from '@/types';
 
 const STATUS_STYLES = {
@@ -36,11 +36,13 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip }: TripCardProps) {
+  const router = useRouter();
   const days = tripDays(trip.startDate, trip.endDate);
 
   return (
-    <Link href={`/trips/${trip.id}`}>
-      <div className="bg-gray-900 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors overflow-hidden group cursor-pointer">
+    <div
+      onClick={() => router.push(`/trips/${trip.id}`)}
+      className="bg-gray-900 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors overflow-hidden group cursor-pointer">
         {/* Cover photo or placeholder */}
         <div className="h-40 bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden">
           {trip.coverPhotoUrl ? (
@@ -70,7 +72,15 @@ export function TripCard({ trip }: TripCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="truncate">{trip.destination}, {trip.country}</span>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${trip.destination}, ${trip.country}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="truncate hover:text-emerald-400 hover:underline transition-colors"
+            >
+              {trip.destination}, {trip.country}
+            </a>
           </div>
 
           <div className="flex items-center justify-between text-xs text-gray-500">
@@ -82,7 +92,6 @@ export function TripCard({ trip }: TripCardProps) {
             <p className="mt-3 text-sm text-gray-500 line-clamp-2">{trip.description}</p>
           )}
         </div>
-      </div>
-    </Link>
+    </div>
   );
 }
