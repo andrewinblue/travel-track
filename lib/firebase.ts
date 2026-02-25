@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
@@ -25,6 +25,8 @@ if (isConfigured) {
   storage = getStorage(app);
   db = getFirestore(app);
 }
+
+export const googleProvider = isConfigured ? new GoogleAuthProvider() : null;
 
 export { auth, storage, db };
 export default app;
