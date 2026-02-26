@@ -40,6 +40,7 @@ export function WorldMap({ trips }: WorldMapProps) {
   const leafletMapRef = useRef<import('leaflet').Map | null>(null);
   const [geocoded, setGeocodedTrips] = useState<GeocodedTrip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
 
   // Geocode all trips
   useEffect(() => {
@@ -65,10 +66,18 @@ export function WorldMap({ trips }: WorldMapProps) {
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
 
+    let cancelled = false;
+
     const initMap = async () => {
       const L = (await import('leaflet')).default;
 
-      const map = L.map(mapRef.current!, {
+      // Bail out if cleanup ran while we were awaiting the import
+      if (cancelled || !mapRef.current) return;
+
+      // Guard against StrictMode double-init on the DOM element
+      if ((mapRef.current as unknown as Record<string, unknown>)._leaflet_id) return;
+
+      const map = L.map(mapRef.current, {
         center: [20, 0],
         zoom: 2,
         minZoom: 2,
@@ -77,21 +86,29 @@ export function WorldMap({ trips }: WorldMapProps) {
         zoomControl: true,
       });
 
+      if (cancelled) {
+        map.remove();
+        return;
+      }
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         noWrap: true,
       }).addTo(map);
 
       leafletMapRef.current = map;
+      setMapReady(true);
     };
 
     initMap();
 
     return () => {
+      cancelled = true;
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
       }
+      setMapReady(false);
     };
   }, []);
 
@@ -165,7 +182,7 @@ export function WorldMap({ trips }: WorldMapProps) {
     };
 
     addMarkers();
-  }, [geocoded]);
+  }, [geocoded, mapReady]);
 
   return (
     <div className="relative w-full h-full">

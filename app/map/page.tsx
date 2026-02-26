@@ -94,7 +94,7 @@ export default function MapPage() {
       </header>
 
       {/* Map fills the rest of the screen */}
-      <div className="flex-1 p-4">
+      <div className="p-4" style={{ height: 'calc(100vh - 65px)' }}>
         {trips.length === 0 ? (
           <div className="h-full rounded-2xl bg-gray-900 border border-gray-800 flex flex-col items-center justify-center gap-4">
             <div className="text-5xl">🗺️</div>
