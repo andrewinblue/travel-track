@@ -8,17 +8,25 @@ interface GeocodedTrip extends Trip {
   lng: number;
 }
 
+async function nominatimFetch(query: string): Promise<{ lat: number; lng: number } | null> {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+    { headers: { 'Accept-Language': 'en' } }
+  );
+  const data = await res.json();
+  if (data.length > 0) {
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+  return null;
+}
+
 async function geocode(destination: string, country: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    const query = encodeURIComponent(`${destination}, ${country}`);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-      { headers: { 'Accept-Language': 'en' } }
-    );
-    const data = await res.json();
-    if (data.length > 0) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    }
+    // Try "Destination, Country" first
+    const result = await nominatimFetch(`${destination}, ${country}`);
+    if (result) return result;
+    // Fallback: try just the destination name
+    return await nominatimFetch(destination);
   } catch {
     // silent
   }
@@ -39,6 +47,7 @@ export function WorldMap({ trips }: WorldMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<import('leaflet').Map | null>(null);
   const [geocoded, setGeocodedTrips] = useState<GeocodedTrip[]>([]);
+  const [failed, setFailed] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
 
@@ -50,13 +59,16 @@ export function WorldMap({ trips }: WorldMapProps) {
     }
     const run = async () => {
       const results: GeocodedTrip[] = [];
+      const notFound: Trip[] = [];
       for (const trip of trips) {
         const coords = await geocode(trip.destination, trip.country);
         if (coords) results.push({ ...trip, ...coords });
+        else notFound.push(trip);
         // Respect Nominatim rate limit (1 req/sec)
         await new Promise((r) => setTimeout(r, 1100));
       }
       setGeocodedTrips(results);
+      setFailed(notFound);
       setLoading(false);
     };
     run();
@@ -194,6 +206,16 @@ export function WorldMap({ trips }: WorldMapProps) {
         <div className="absolute inset-0 bg-gray-900/80 rounded-2xl flex flex-col items-center justify-center gap-3 z-[1000]">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-300">Locating your destinations…</p>
+        </div>
+      )}
+
+      {/* Failed geocoding warning */}
+      {!loading && failed.length > 0 && (
+        <div className="absolute top-4 right-4 bg-amber-500/20 border border-amber-500/40 rounded-xl p-3 z-[1000] max-w-[220px]">
+          <p className="text-xs font-semibold text-amber-400 mb-1">Location not found</p>
+          {failed.map((t) => (
+            <p key={t.id} className="text-xs text-amber-300/80 truncate">{t.destination}, {t.country}</p>
+          ))}
         </div>
       )}
 
