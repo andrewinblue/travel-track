@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/components/AuthProvider';
 import { AddActivityModal } from '@/components/AddActivityModal';
+import { EditTripModal } from '@/components/EditTripModal';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -55,6 +56,7 @@ export default function TripDetailPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddActivity, setShowAddActivity] = useState(false);
+  const [showEditTrip, setShowEditTrip] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
@@ -237,7 +239,17 @@ export default function TripDetailPage() {
                 </div>
               </div>
 
-              {/* Status */}
+              {/* Edit + Status */}
+              <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowEditTrip(true)}
+                className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                title="Edit trip"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
               <div className="relative shrink-0">
                 <button
                   onClick={() => setIsEditingStatus(!isEditingStatus)}
@@ -260,6 +272,7 @@ export default function TripDetailPage() {
                     ))}
                   </div>
                 )}
+              </div>
               </div>
             </div>
 
@@ -399,6 +412,14 @@ export default function TripDetailPage() {
           tripEndDate={trip.endDate}
           onClose={() => setShowAddActivity(false)}
           onAdded={fetchActivities}
+        />
+      )}
+
+      {showEditTrip && (
+        <EditTripModal
+          trip={trip}
+          onClose={() => setShowEditTrip(false)}
+          onUpdated={(updated) => setTrip(updated)}
         />
       )}
     </div>
