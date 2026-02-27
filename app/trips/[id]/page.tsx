@@ -6,7 +6,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/components/AuthProvider';
 import { AddActivityModal } from '@/components/AddActivityModal';
+import { EditActivityModal } from '@/components/EditActivityModal';
 import { EditTripModal } from '@/components/EditTripModal';
+import { PhotoGallery } from '@/components/PhotoGallery';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -60,6 +62,7 @@ export default function TripDetailPage() {
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -303,6 +306,9 @@ export default function TripDetailPage() {
           </div>
         </div>
 
+        {/* Photo gallery */}
+        <PhotoGallery activities={activities} />
+
         {/* Activities section */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Activities</h2>
@@ -380,15 +386,27 @@ export default function TripDetailPage() {
                                 )}
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleDeleteActivity(activity.id)}
-                              disabled={deletingActivityId === activity.id}
-                              className="text-gray-600 hover:text-red-400 transition-colors shrink-0 disabled:opacity-50"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => setEditingActivity(activity)}
+                                className="text-gray-600 hover:text-white transition-colors p-0.5"
+                                title="Edit activity"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteActivity(activity.id)}
+                                disabled={deletingActivityId === activity.id}
+                                className="text-gray-600 hover:text-red-400 transition-colors p-0.5 disabled:opacity-50"
+                                title="Delete activity"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
 
                           {activity.notes && (
@@ -420,6 +438,19 @@ export default function TripDetailPage() {
           trip={trip}
           onClose={() => setShowEditTrip(false)}
           onUpdated={(updated) => setTrip(updated)}
+        />
+      )}
+
+      {editingActivity && (
+        <EditActivityModal
+          activity={editingActivity}
+          tripStartDate={trip.startDate}
+          tripEndDate={trip.endDate}
+          onClose={() => setEditingActivity(null)}
+          onUpdated={(updated) => {
+            setActivities((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+            setEditingActivity(null);
+          }}
         />
       )}
     </div>
