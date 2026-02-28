@@ -10,6 +10,7 @@ import { EditActivityModal } from '@/components/EditActivityModal';
 import { EditTripModal } from '@/components/EditTripModal';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { PackingList } from '@/components/PackingList';
+import { BudgetTracker } from '@/components/BudgetTracker';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -307,6 +308,14 @@ export default function TripDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Budget tracker */}
+        <BudgetTracker
+          tripId={tripId}
+          userId={user.uid}
+          budget={trip.budget}
+          onBudgetChange={(b) => setTrip((prev) => prev ? { ...prev, budget: b } : prev)}
+        />
 
         {/* Packing list */}
         <PackingList tripId={tripId} userId={user.uid} />

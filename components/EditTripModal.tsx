@@ -21,6 +21,7 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
     endDate: trip.endDate,
     description: trip.description ?? '',
     status: trip.status as TripStatus,
+    budget: trip.budget?.toString() ?? '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -32,8 +33,14 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
     if (!db) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'trips', trip.id), { ...form, updatedAt: Date.now() });
-      onUpdated({ ...trip, ...form });
+      const budgetVal = parseFloat(form.budget);
+      const updates = {
+        ...form,
+        budget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
+        updatedAt: Date.now(),
+      };
+      await updateDoc(doc(db, 'trips', trip.id), updates);
+      onUpdated({ ...trip, ...updates, budget: updates.budget ?? undefined });
       onClose();
     } catch (err) {
       console.error('Error updating trip:', err);
@@ -133,6 +140,20 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
               <option value="ongoing">Ongoing</option>
               <option value="completed">Completed</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">Budget</label>
+            <input
+              type="number"
+              name="budget"
+              value={form.budget}
+              onChange={handleChange}
+              min="0"
+              step="any"
+              placeholder="e.g. 2000"
+              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+            />
           </div>
 
           <div>

@@ -20,8 +20,20 @@ export interface Trip {
   description: string;
   status: TripStatus;
   coverPhotoUrl?: string;
+  budget?: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface Expense {
+  id: string;
+  tripId: string;
+  userId: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string; // YYYY-MM-DD
+  createdAt: number;
 }
 
 export interface PackingItem {
