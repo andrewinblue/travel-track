@@ -87,8 +87,22 @@ export default function MapPage() {
               </span>
             </nav>
           </div>
-          <div className="text-sm text-gray-500">
-            {trips.length} trip{trips.length !== 1 ? 's' : ''} · {new Set(trips.map((t) => t.country)).size} countr{new Set(trips.map((t) => t.country)).size !== 1 ? 'ies' : 'y'}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500">
+              {trips.length} trip{trips.length !== 1 ? 's' : ''} · {new Set(trips.map((t) => t.country)).size} countr{new Set(trips.map((t) => t.country)).size !== 1 ? 'ies' : 'y'}
+            </span>
+            <Link href="/profile" className="flex items-center hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-600 flex items-center justify-center shrink-0">
+                {user.photoURL ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs font-bold text-white">
+                    {(user.displayName ?? user.email ?? '?')[0].toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </Link>
           </div>
         </div>
       </header>

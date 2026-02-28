@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/components/AuthProvider';
 import { TripCard } from '@/components/TripCard';
 import { AddTripModal } from '@/components/AddTripModal';
@@ -57,13 +56,6 @@ export default function HomePage() {
     fetchTrips();
   }, [fetchTrips]);
 
-  const handleSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
-      router.push('/login');
-    }
-  };
-
   const filteredTrips = activeTab === 'all' ? trips : trips.filter((t) => t.status === activeTab);
 
   const stats = {
@@ -105,15 +97,18 @@ export default function HomePage() {
               World Map
             </Link>
           </nav>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
-            <button
-              onClick={handleSignOut}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Sign out
-            </button>
-          </div>
+          <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-600 flex items-center justify-center shrink-0">
+              {user.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">
+                  {(user.displayName ?? user.email ?? '?')[0].toUpperCase()}
+                </span>
+              )}
+            </div>
+          </Link>
         </div>
       </header>
 
