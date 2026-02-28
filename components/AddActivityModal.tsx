@@ -34,7 +34,7 @@ export function AddActivityModal({
 }: AddActivityModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     title: '',
     type: 'sightseeing' as ActivityType,
@@ -55,19 +55,21 @@ export function AddActivityModal({
 
     setLoading(true);
     try {
-      let photoUrl: string | undefined;
+      const photoUrls: string[] = [];
 
-      if (photoFile && storage) {
-        const storageRef = ref(storage, `activities/${user.uid}/${tripId}/${Date.now()}_${photoFile.name}`);
-        await uploadBytes(storageRef, photoFile);
-        photoUrl = await getDownloadURL(storageRef);
+      if (photoFiles.length > 0 && storage) {
+        for (const file of photoFiles) {
+          const storageRef = ref(storage, `activities/${user.uid}/${tripId}/${Date.now()}_${file.name}`);
+          await uploadBytes(storageRef, file);
+          photoUrls.push(await getDownloadURL(storageRef));
+        }
       }
 
       await addDoc(collection(db, 'activities'), {
         ...form,
         tripId,
         userId: user.uid,
-        photoUrl: photoUrl || null,
+        photoUrls,
         createdAt: Date.now(),
       });
 
@@ -166,11 +168,37 @@ export function AddActivityModal({
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">Photo (optional)</label>
+            <label className="block text-sm text-gray-400 mb-1.5">Photos (optional)</label>
+            {photoFiles.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {photoFiles.map((file, idx) => (
+                  <div key={idx} className="relative aspect-square">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoFiles((prev) => prev.filter((_, i) => i !== idx))}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setPhotoFiles((prev) => [...prev, ...files]);
+                e.target.value = '';
+              }}
               className="w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-white hover:file:bg-gray-600 cursor-pointer"
             />
           </div>

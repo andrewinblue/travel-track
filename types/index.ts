@@ -33,6 +33,7 @@ export interface Activity {
   date: string; // ISO date string YYYY-MM-DD
   notes: string;
   location?: string;
-  photoUrl?: string;
+  photoUrl?: string;   // legacy single photo
+  photoUrls?: string[]; // multiple photos
   createdAt: number;
 }

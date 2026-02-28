@@ -17,6 +17,15 @@ const ACTIVITY_TYPES: { value: ActivityType; label: string; icon: string }[] = [
   { value: 'other', label: 'Other', icon: '📌' },
 ];
 
+// Normalize legacy photoUrl + photoUrls into a single array
+function getPhotos(activity: Activity): string[] {
+  const urls = activity.photoUrls ?? [];
+  if (activity.photoUrl && !urls.includes(activity.photoUrl)) {
+    return [activity.photoUrl, ...urls];
+  }
+  return urls;
+}
+
 interface EditActivityModalProps {
   activity: Activity;
   tripStartDate: string;
@@ -34,7 +43,10 @@ export function EditActivityModal({
 }: EditActivityModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  // Existing photos still kept (user can remove them)
+  const [keepUrls, setKeepUrls] = useState<string[]>(getPhotos(activity));
+  // New files selected by the user
+  const [newFiles, setNewFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     title: activity.title,
     type: activity.type as ActivityType,
@@ -55,18 +67,25 @@ export function EditActivityModal({
 
     setLoading(true);
     try {
-      let photoUrl = activity.photoUrl ?? null;
-
-      if (photoFile && storage) {
-        const storageRef = ref(
-          storage,
-          `activities/${user.uid}/${activity.tripId}/${Date.now()}_${photoFile.name}`
-        );
-        await uploadBytes(storageRef, photoFile);
-        photoUrl = await getDownloadURL(storageRef);
+      const uploadedUrls: string[] = [];
+      if (newFiles.length > 0 && storage) {
+        for (const file of newFiles) {
+          const storageRef = ref(
+            storage,
+            `activities/${user.uid}/${activity.tripId}/${Date.now()}_${file.name}`
+          );
+          await uploadBytes(storageRef, file);
+          uploadedUrls.push(await getDownloadURL(storageRef));
+        }
       }
 
-      const updates = { ...form, photoUrl };
+      const photoUrls = [...keepUrls, ...uploadedUrls];
+      const updates = {
+        ...form,
+        photoUrls,
+        photoUrl: photoUrls[0] ?? null, // keep legacy field in sync
+      };
+
       await updateDoc(doc(db, 'activities', activity.id), updates);
       onUpdated({ ...activity, ...updates });
       onClose();
@@ -161,33 +180,58 @@ export function EditActivityModal({
             />
           </div>
 
+          {/* Photos */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">Photo</label>
-            {activity.photoUrl && !photoFile && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={activity.photoUrl}
-                alt="Current photo"
-                className="w-full h-32 object-cover rounded-lg mb-2"
-              />
+            <label className="block text-sm text-gray-400 mb-1.5">Photos</label>
+
+            {/* Existing photos */}
+            {(keepUrls.length > 0 || newFiles.length > 0) && (
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {keepUrls.map((url, idx) => (
+                  <div key={url} className="relative aspect-square">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => setKeepUrls((prev) => prev.filter((u) => u !== url))}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {newFiles.map((file, idx) => (
+                  <div key={`new-${idx}`} className="relative aspect-square">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setNewFiles((prev) => prev.filter((_, i) => i !== idx))}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-            {photoFile && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={URL.createObjectURL(photoFile)}
-                alt="New photo preview"
-                className="w-full h-32 object-cover rounded-lg mb-2"
-              />
-            )}
+
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setNewFiles((prev) => [...prev, ...files]);
+                e.target.value = '';
+              }}
               className="w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-white hover:file:bg-gray-600 cursor-pointer"
             />
-            {activity.photoUrl && (
-              <p className="text-xs text-gray-500 mt-1">Select a new file to replace the current photo.</p>
-            )}
+            <p className="text-xs text-gray-500 mt-1">Tap × on a photo to remove it. Select files to add more.</p>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

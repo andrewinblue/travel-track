@@ -3,13 +3,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Activity } from '@/types';
 
+interface GalleryPhoto {
+  url: string;
+  title: string;
+  location?: string;
+}
+
 interface PhotoGalleryProps {
   activities: Activity[];
 }
 
+function getActivityPhotos(activity: Activity): string[] {
+  const urls = activity.photoUrls ?? [];
+  if (activity.photoUrl && !urls.includes(activity.photoUrl)) {
+    return [activity.photoUrl, ...urls];
+  }
+  return urls;
+}
+
 export function PhotoGallery({ activities }: PhotoGalleryProps) {
-  const photos = activities.filter((a) => a.photoUrl);
+  const photos: GalleryPhoto[] = activities.flatMap((a) =>
+    getActivityPhotos(a).map((url) => ({ url, title: a.title, location: a.location }))
+  );
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
 
   const closeLightbox = () => setLightboxIndex(null);
 
@@ -41,21 +58,21 @@ export function PhotoGallery({ activities }: PhotoGalleryProps) {
       <div className="mb-8">
         <h2 className="text-lg font-bold text-white mb-4">Photos</h2>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {photos.map((activity, idx) => (
+          {photos.map((photo, idx) => (
             <button
-              key={activity.id}
+              key={idx}
               onClick={() => setLightboxIndex(idx)}
               className="relative aspect-square rounded-xl overflow-hidden bg-gray-800 group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={activity.photoUrl!}
-                alt={activity.title}
+                src={photo.url}
+                alt={photo.title}
                 className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-end p-2">
                 <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity line-clamp-1">
-                  {activity.title}
+                  {photo.title}
                 </span>
               </div>
             </button>
@@ -103,7 +120,7 @@ export function PhotoGallery({ activities }: PhotoGalleryProps) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={current.photoUrl!}
+              src={current.url}
               alt={current.title}
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
             />

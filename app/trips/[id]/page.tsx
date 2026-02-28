@@ -63,6 +63,7 @@ export default function TripDetailPage() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -311,7 +312,25 @@ export default function TripDetailPage() {
 
         {/* Activities section */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-white">Activities</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-white">Activities</h2>
+            {activities.length > 0 && (
+              <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  List
+                </button>
+                <button
+                  onClick={() => setViewMode('timeline')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === 'timeline' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  Timeline
+                </button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleDeleteTrip}
@@ -343,7 +362,8 @@ export default function TripDetailPage() {
               Log first activity
             </button>
           </div>
-        ) : (
+        ) : viewMode === 'list' ? (
+          /* ── List view ── */
           <div className="space-y-8">
             {sortedDates.map((date) => (
               <div key={date}>
@@ -351,71 +371,134 @@ export default function TripDetailPage() {
                   {formatDate(date)}
                 </h3>
                 <div className="space-y-3">
-                  {grouped[date].map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden"
-                    >
-                      <div className="flex gap-4 p-4">
-                        {/* Photo thumbnail */}
-                        {activity.photoUrl && (
-                          <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-800">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={activity.photoUrl}
-                              alt={activity.title}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-lg shrink-0">{ACTIVITY_ICONS[activity.type]}</span>
-                              <div className="min-w-0">
-                                <h4 className="font-medium text-white text-sm truncate">{activity.title}</h4>
-                                {activity.location && (
-                                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    {activity.location}
-                                  </p>
-                                )}
+                  {grouped[date].map((activity) => {
+                    const urls = [
+                      ...(activity.photoUrls ?? []),
+                      ...(activity.photoUrl && !(activity.photoUrls ?? []).includes(activity.photoUrl) ? [activity.photoUrl] : []),
+                    ];
+                    const visible = urls.slice(0, 3);
+                    const extra = urls.length - visible.length;
+                    return (
+                      <div key={activity.id} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                        <div className="flex gap-4 p-4">
+                          {visible.length > 0 && (
+                            <div className="flex gap-1 shrink-0">
+                              {visible.map((url, i) => (
+                                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-800">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt={activity.title} className="w-full h-full object-cover" />
+                                  {i === visible.length - 1 && extra > 0 && (
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-semibold">+{extra}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-lg shrink-0">{ACTIVITY_ICONS[activity.type]}</span>
+                                <div className="min-w-0">
+                                  <h4 className="font-medium text-white text-sm truncate">{activity.title}</h4>
+                                  {activity.location && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                      <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      {activity.location}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => setEditingActivity(activity)} className="text-gray-600 hover:text-white transition-colors p-0.5" title="Edit activity">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onClick={() => handleDeleteActivity(activity.id)} disabled={deletingActivityId === activity.id} className="text-gray-600 hover:text-red-400 transition-colors p-0.5 disabled:opacity-50" title="Delete activity">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                onClick={() => setEditingActivity(activity)}
-                                className="text-gray-600 hover:text-white transition-colors p-0.5"
-                                title="Edit activity"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteActivity(activity.id)}
-                                disabled={deletingActivityId === activity.id}
-                                className="text-gray-600 hover:text-red-400 transition-colors p-0.5 disabled:opacity-50"
-                                title="Delete activity"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
+                            {activity.notes && (
+                              <p className="mt-2 text-sm text-gray-400 leading-relaxed">{activity.notes}</p>
+                            )}
                           </div>
-
-                          {activity.notes && (
-                            <p className="mt-2 text-sm text-gray-400 leading-relaxed">{activity.notes}</p>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* ── Timeline view ── */
+          <div className="relative pl-8">
+            {/* Vertical spine */}
+            <div className="absolute left-3 top-2 bottom-2 w-px bg-gray-800" />
+
+            {sortedDates.map((date) => (
+              <div key={date} className="relative mb-8 last:mb-0">
+                {/* Date node */}
+                <div className="absolute -left-5 flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-gray-950 mt-0.5" />
+                <p className="text-sm font-semibold text-emerald-400 mb-3">{formatDate(date)}</p>
+
+                <div className="space-y-3">
+                  {grouped[date].map((activity) => {
+                    const urls = [
+                      ...(activity.photoUrls ?? []),
+                      ...(activity.photoUrl && !(activity.photoUrls ?? []).includes(activity.photoUrl) ? [activity.photoUrl] : []),
+                    ];
+                    const visible = urls.slice(0, 3);
+                    const extra = urls.length - visible.length;
+                    return (
+                      <div key={activity.id} className="relative ml-2">
+                        {/* Activity dot */}
+                        <div className="absolute -left-5 top-4 w-2 h-2 rounded-full bg-gray-600 ring-2 ring-gray-950" />
+                        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                          {/* Photo strip */}
+                          {visible.length > 0 && (
+                            <div className="flex gap-0.5">
+                              {visible.map((url, i) => (
+                                <div key={i} className="relative flex-1 h-28 overflow-hidden bg-gray-800 first:rounded-tl-xl last:rounded-tr-xl">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt={activity.title} className="w-full h-full object-cover" />
+                                  {i === visible.length - 1 && extra > 0 && (
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-sm font-semibold">+{extra}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-base shrink-0">{ACTIVITY_ICONS[activity.type]}</span>
+                                <div className="min-w-0">
+                                  <h4 className="font-medium text-white text-sm truncate">{activity.title}</h4>
+                                  {activity.location && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{activity.location}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => setEditingActivity(activity)} className="text-gray-600 hover:text-white transition-colors p-0.5" title="Edit">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onClick={() => handleDeleteActivity(activity.id)} disabled={deletingActivityId === activity.id} className="text-gray-600 hover:text-red-400 transition-colors p-0.5 disabled:opacity-50" title="Delete">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </div>
+                            </div>
+                            {activity.notes && (
+                              <p className="mt-1.5 text-xs text-gray-400 leading-relaxed">{activity.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
