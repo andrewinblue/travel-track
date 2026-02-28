@@ -24,6 +24,16 @@ export interface Trip {
   updatedAt: number;
 }
 
+export interface PackingItem {
+  id: string;
+  tripId: string;
+  userId: string;
+  name: string;
+  category: string;
+  packed: boolean;
+  createdAt: number;
+}
+
 export interface Activity {
   id: string;
   tripId: string;

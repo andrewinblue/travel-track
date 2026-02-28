@@ -9,6 +9,7 @@ import { AddActivityModal } from '@/components/AddActivityModal';
 import { EditActivityModal } from '@/components/EditActivityModal';
 import { EditTripModal } from '@/components/EditTripModal';
 import { PhotoGallery } from '@/components/PhotoGallery';
+import { PackingList } from '@/components/PackingList';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -306,6 +307,9 @@ export default function TripDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Packing list */}
+        <PackingList tripId={tripId} userId={user.uid} />
 
         {/* Photo gallery */}
         <PhotoGallery activities={activities} />
