@@ -5,7 +5,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   getDocs,
   addDoc,
   updateDoc,
@@ -46,10 +45,12 @@ export function PackingList({ tripId, userId }: PackingListProps) {
       const q = query(
         collection(db, 'packingItems'),
         where('tripId', '==', tripId),
-        orderBy('createdAt', 'asc')
+        where('userId', '==', userId)
       );
       const snap = await getDocs(q);
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() } as PackingItem)));
+      const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as PackingItem));
+      fetched.sort((a, b) => a.createdAt - b.createdAt);
+      setItems(fetched);
       setLoading(false);
     };
     fetch();
