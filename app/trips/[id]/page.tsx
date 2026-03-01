@@ -126,7 +126,7 @@ export default function TripDetailPage() {
     setSharingLoading(true);
     try {
       if (!trip.isPublic) {
-        const shareId = trip.shareId ?? crypto.randomUUID().replace(/-/g, '');
+        const shareId = trip.shareId ?? Array.from({ length: 20 }, () => Math.random().toString(36)[2]).join('');
         await updateDoc(doc(db, 'trips', tripId), { shareId, isPublic: true, updatedAt: Date.now() });
         setTrip((prev) => prev ? { ...prev, shareId, isPublic: true } : prev);
       } else {
