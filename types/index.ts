@@ -21,6 +21,8 @@ export interface Trip {
   status: TripStatus;
   coverPhotoUrl?: string;
   budget?: number;
+  shareId?: string;
+  isPublic?: boolean;
   createdAt: number;
   updatedAt: number;
 }

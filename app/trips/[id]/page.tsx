@@ -66,6 +66,9 @@ export default function TripDetailPage() {
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
+  const [showShare, setShowShare] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -116,6 +119,34 @@ export default function TripDetailPage() {
     await updateDoc(doc(db, 'trips', tripId), { status, updatedAt: Date.now() });
     setTrip((prev) => prev ? { ...prev, status } : prev);
     setIsEditingStatus(false);
+  };
+
+  const handleToggleShare = async () => {
+    if (!trip || !db) return;
+    setSharingLoading(true);
+    try {
+      if (!trip.isPublic) {
+        const shareId = trip.shareId ?? crypto.randomUUID().replace(/-/g, '');
+        await updateDoc(doc(db, 'trips', tripId), { shareId, isPublic: true, updatedAt: Date.now() });
+        setTrip((prev) => prev ? { ...prev, shareId, isPublic: true } : prev);
+      } else {
+        await updateDoc(doc(db, 'trips', tripId), { isPublic: false, updatedAt: Date.now() });
+        setTrip((prev) => prev ? { ...prev, isPublic: false } : prev);
+      }
+    } finally {
+      setSharingLoading(false);
+    }
+  };
+
+  const shareUrl = trip?.shareId && trip.isPublic
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${trip.shareId}`
+    : null;
+
+  const handleCopy = () => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +279,15 @@ export default function TripDetailPage() {
               {/* Edit + Status */}
               <div className="flex items-center gap-2 shrink-0">
               <button
+                onClick={() => setShowShare((v) => !v)}
+                className={`p-1.5 rounded-lg transition-colors ${showShare ? 'text-emerald-400 bg-emerald-500/10' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}
+                title="Share trip"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+              <button
                 onClick={() => setShowEditTrip(true)}
                 className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 title="Edit trip"
@@ -308,6 +348,38 @@ export default function TripDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Share panel */}
+        {showShare && (
+          <div className="mb-6 bg-gray-900 rounded-2xl border border-gray-800 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-white">Share this trip</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {trip.isPublic ? 'Anyone with the link can view this trip.' : 'Sharing is off. Enable to generate a public link.'}
+                </p>
+              </div>
+              <button
+                onClick={handleToggleShare}
+                disabled={sharingLoading}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${trip.isPublic ? 'bg-emerald-500' : 'bg-gray-700'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${trip.isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {shareUrl && (
+              <div className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2">
+                <span className="flex-1 text-xs text-gray-300 truncate">{shareUrl}</span>
+                <button
+                  onClick={handleCopy}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 shrink-0 font-medium"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Budget tracker */}
         <BudgetTracker
