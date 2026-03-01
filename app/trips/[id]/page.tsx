@@ -11,6 +11,7 @@ import { EditTripModal } from '@/components/EditTripModal';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { PackingList } from '@/components/PackingList';
 import { BudgetTracker } from '@/components/BudgetTracker';
+import { WeatherWidget } from '@/components/WeatherWidget';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -390,6 +391,14 @@ export default function TripDetailPage() {
             )}
           </div>
         )}
+
+        {/* Weather widget */}
+        <WeatherWidget
+          destination={trip.destination}
+          country={trip.country}
+          startDate={trip.startDate}
+          endDate={trip.endDate}
+        />
 
         {/* Budget tracker */}
         <BudgetTracker
