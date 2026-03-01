@@ -5,6 +5,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from './AuthProvider';
+import { useToast } from './ToastProvider';
 import type { ActivityType } from '@/types';
 
 const ACTIVITY_TYPES: { value: ActivityType; label: string; icon: string }[] = [
@@ -33,6 +34,7 @@ export function AddActivityModal({
   onAdded,
 }: AddActivityModalProps) {
   const { user } = useAuth();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
@@ -73,10 +75,12 @@ export function AddActivityModal({
         createdAt: Date.now(),
       });
 
+      toast.success('Activity logged!');
       onAdded();
       onClose();
     } catch (err) {
       console.error('Error adding activity:', err);
+      toast.error('Failed to add activity');
     } finally {
       setLoading(false);
     }

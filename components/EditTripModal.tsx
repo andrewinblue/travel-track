@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useToast } from './ToastProvider';
 import type { Trip, TripStatus } from '@/types';
 
 interface EditTripModalProps {
@@ -12,6 +13,7 @@ interface EditTripModalProps {
 }
 
 export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: trip.title,
@@ -40,10 +42,12 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
         updatedAt: Date.now(),
       };
       await updateDoc(doc(db, 'trips', trip.id), updates);
+      toast.success('Trip updated!');
       onUpdated({ ...trip, ...updates, budget: updates.budget ?? undefined });
       onClose();
     } catch (err) {
       console.error('Error updating trip:', err);
+      toast.error('Failed to update trip');
     } finally {
       setLoading(false);
     }

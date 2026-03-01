@@ -5,6 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from './AuthProvider';
+import { useToast } from './ToastProvider';
 import type { Activity, ActivityType } from '@/types';
 
 const ACTIVITY_TYPES: { value: ActivityType; label: string; icon: string }[] = [
@@ -42,6 +43,7 @@ export function EditActivityModal({
   onUpdated,
 }: EditActivityModalProps) {
   const { user } = useAuth();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   // Existing photos still kept (user can remove them)
   const [keepUrls, setKeepUrls] = useState<string[]>(getPhotos(activity));
@@ -87,10 +89,12 @@ export function EditActivityModal({
       };
 
       await updateDoc(doc(db, 'activities', activity.id), updates);
+      toast.success('Activity updated!');
       onUpdated({ ...activity, ...updates });
       onClose();
     } catch (err) {
       console.error('Error updating activity:', err);
+      toast.error('Failed to update activity');
     } finally {
       setLoading(false);
     }

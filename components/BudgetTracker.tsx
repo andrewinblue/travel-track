@@ -13,6 +13,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useToast } from './ToastProvider';
 import type { Expense } from '@/types';
 
 const CATEGORIES = [
@@ -33,6 +34,7 @@ interface BudgetTrackerProps {
 }
 
 export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: BudgetTrackerProps) {
+  const toast = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('USD');
@@ -84,6 +86,7 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
       await updateDoc(doc(db, 'trips', tripId), { budget: newBudget ?? null });
       onBudgetChange(newBudget);
       setEditingBudget(false);
+      toast.success('Budget saved');
     } finally {
       setSavingBudget(false);
     }
@@ -108,6 +111,7 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
       setExpenses((prev) => [{ id: ref.id, ...data }, ...prev]);
       setNewAmount('');
       setNewDescription('');
+      toast.success('Expense added');
     } finally {
       setAdding(false);
     }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './AuthProvider';
+import { useToast } from './ToastProvider';
 import type { TripStatus } from '@/types';
 
 interface AddTripModalProps {
@@ -13,6 +14,7 @@ interface AddTripModalProps {
 
 export function AddTripModal({ onClose, onAdded }: AddTripModalProps) {
   const { user } = useAuth();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: '',
@@ -40,10 +42,12 @@ export function AddTripModal({ onClose, onAdded }: AddTripModalProps) {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
+      toast.success('Trip created!');
       onAdded();
       onClose();
     } catch (err) {
       console.error('Error adding trip:', err);
+      toast.error('Failed to create trip');
     } finally {
       setLoading(false);
     }

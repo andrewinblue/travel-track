@@ -13,6 +13,8 @@ import { PackingList } from '@/components/PackingList';
 import { BudgetTracker } from '@/components/BudgetTracker';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { TripNotes } from '@/components/TripNotes';
+import { TripPageSkeleton } from '@/components/Skeletons';
+import { useToast } from '@/components/ToastProvider';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -71,6 +73,7 @@ export default function TripDetailPage() {
   const [showShare, setShowShare] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -131,9 +134,11 @@ export default function TripDetailPage() {
         const shareId = trip.shareId ?? Array.from({ length: 20 }, () => Math.random().toString(36)[2]).join('');
         await updateDoc(doc(db, 'trips', tripId), { shareId, isPublic: true, updatedAt: Date.now() });
         setTrip((prev) => prev ? { ...prev, shareId, isPublic: true } : prev);
+        toast.success('Sharing enabled');
       } else {
         await updateDoc(doc(db, 'trips', tripId), { isPublic: false, updatedAt: Date.now() });
         setTrip((prev) => prev ? { ...prev, isPublic: false } : prev);
+        toast.info('Sharing disabled');
       }
     } finally {
       setSharingLoading(false);
@@ -159,6 +164,7 @@ export default function TripDetailPage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    toast.success('Link copied!');
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,8 +177,10 @@ export default function TripDetailPage() {
       const url = await getDownloadURL(storageRef);
       await updateDoc(doc(db, 'trips', tripId), { coverPhotoUrl: url, updatedAt: Date.now() });
       setTrip((prev) => prev ? { ...prev, coverPhotoUrl: url } : prev);
+      toast.success('Cover photo updated!');
     } catch (err) {
       console.error('Cover upload error:', err);
+      toast.error('Failed to upload cover photo');
     } finally {
       setCoverUploading(false);
     }
@@ -184,6 +192,9 @@ export default function TripDetailPage() {
     try {
       await deleteDoc(doc(db, 'activities', activityId));
       setActivities((prev) => prev.filter((a) => a.id !== activityId));
+      toast.success('Activity deleted');
+    } catch {
+      toast.error('Failed to delete activity');
     } finally {
       setDeletingActivityId(null);
     }
@@ -205,8 +216,9 @@ export default function TripDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-gray-950">
+        <div className="h-[65px] border-b border-gray-800 bg-gray-900/80" />
+        <TripPageSkeleton />
       </div>
     );
   }

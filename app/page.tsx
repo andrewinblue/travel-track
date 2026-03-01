@@ -8,6 +8,7 @@ import { TripCard } from '@/components/TripCard';
 import { AddTripModal } from '@/components/AddTripModal';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { DashboardSkeleton, TripCardSkeleton } from '@/components/Skeletons';
 import type { Trip, TripStatus } from '@/types';
 
 type FilterTab = 'all' | TripStatus;
@@ -76,8 +77,9 @@ export default function HomePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-gray-950">
+        <div className="h-[65px] border-b border-gray-800 bg-gray-900/80" />
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -199,8 +201,8 @@ export default function HomePage() {
 
         {/* Trips grid */}
         {loadingTrips ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => <TripCardSkeleton key={i} />)}
           </div>
         ) : filteredTrips.length === 0 ? (
           <div className="text-center py-24">
