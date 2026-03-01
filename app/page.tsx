@@ -25,6 +25,7 @@ export default function HomePage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
@@ -56,7 +57,15 @@ export default function HomePage() {
     fetchTrips();
   }, [fetchTrips]);
 
-  const filteredTrips = activeTab === 'all' ? trips : trips.filter((t) => t.status === activeTab);
+  const q = searchQuery.trim().toLowerCase();
+  const filteredTrips = trips
+    .filter((t) => activeTab === 'all' || t.status === activeTab)
+    .filter((t) =>
+      !q ||
+      t.title.toLowerCase().includes(q) ||
+      t.destination.toLowerCase().includes(q) ||
+      t.country.toLowerCase().includes(q)
+    );
 
   const stats = {
     total: trips.length,
@@ -144,6 +153,31 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* Search */}
+        {trips.length > 0 && (
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search trips by name, city or country…"
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Filter tabs */}
         {trips.length > 0 && (
           <div className="flex gap-1 mb-6 bg-gray-900 rounded-xl p-1 border border-gray-800 w-fit">
@@ -176,14 +210,16 @@ export default function HomePage() {
               </svg>
             </div>
             <h2 className="text-lg font-semibold text-white mb-2">
-              {activeTab === 'all' ? 'No trips yet' : `No ${activeTab} trips`}
+              {q ? 'No trips found' : activeTab === 'all' ? 'No trips yet' : `No ${activeTab} trips`}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              {activeTab === 'all'
+              {q
+                ? `No trips match "${searchQuery}".`
+                : activeTab === 'all'
                 ? 'Start by creating your first trip!'
                 : `You have no ${activeTab} trips.`}
             </p>
-            {activeTab === 'all' && (
+            {activeTab === 'all' && !q && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors"
