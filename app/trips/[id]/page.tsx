@@ -12,6 +12,7 @@ import { PhotoGallery } from '@/components/PhotoGallery';
 import { PackingList } from '@/components/PackingList';
 import { BudgetTracker } from '@/components/BudgetTracker';
 import { WeatherWidget } from '@/components/WeatherWidget';
+import { TripNotes } from '@/components/TripNotes';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Trip, Activity, ActivityType } from '@/types';
@@ -414,6 +415,9 @@ export default function TripDetailPage() {
         {/* Photo gallery */}
         <PhotoGallery activities={activities} />
 
+        {/* Notes & Journal */}
+        <TripNotes tripId={tripId} userId={user.uid} />
+
         {/* Activities section */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -436,6 +440,15 @@ export default function TripDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.open(`/trips/${tripId}/print`, '_blank')}
+              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print / PDF
+            </button>
             <button
               onClick={handleDeleteTrip}
               className="px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
