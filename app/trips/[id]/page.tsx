@@ -144,7 +144,17 @@ export default function TripDetailPage() {
 
   const handleCopy = () => {
     if (!shareUrl) return;
-    navigator.clipboard.writeText(shareUrl);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+    } else {
+      const el = document.createElement('textarea');
+      el.value = shareUrl;
+      el.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
