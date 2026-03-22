@@ -40,9 +40,11 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
   const [currency, setCurrency] = useState('USD');
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budget?.toString() ?? '');
+  const [budgetError, setBudgetError] = useState('');
   const [savingBudget, setSavingBudget] = useState(false);
 
   // Add form state
+  const [expenseError, setExpenseError] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newCategory, setNewCategory] = useState('food');
   const [newDescription, setNewDescription] = useState('');
@@ -80,6 +82,11 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
   const saveBudget = async () => {
     if (!db) return;
     const val = parseFloat(budgetInput);
+    if (budgetInput.trim() && (isNaN(val) || val < 0)) {
+      setBudgetError('Budget must be a positive number');
+      return;
+    }
+    setBudgetError('');
     setSavingBudget(true);
     try {
       const newBudget = isNaN(val) || val <= 0 ? undefined : val;
@@ -95,7 +102,20 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(newAmount);
-    if (isNaN(amount) || amount <= 0 || !db) return;
+    if (!newAmount.trim()) {
+      setExpenseError('Amount is required');
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      setExpenseError('Amount must be a positive number');
+      return;
+    }
+    if (amount > 999999999) {
+      setExpenseError('Amount is too large');
+      return;
+    }
+    if (!db) return;
+    setExpenseError('');
     setAdding(true);
     try {
       const data: Omit<Expense, 'id'> = {
@@ -153,32 +173,35 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
 
         {/* Budget edit inline */}
         {editingBudget && (
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-gray-400 shrink-0">{currency}</span>
-            <input
-              type="number"
-              min="0"
-              step="any"
-              value={budgetInput}
-              onChange={(e) => setBudgetInput(e.target.value)}
-              placeholder="e.g. 2000"
-              autoFocus
-              className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
-            />
-            <button
-              onClick={saveBudget}
-              disabled={savingBudget}
-              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-lg disabled:opacity-50"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditingBudget(false)}
-              className="px-3 py-1.5 text-gray-400 hover:text-white text-sm"
-            >
-              Cancel
-            </button>
-          </div>
+          <>
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-sm text-gray-400 shrink-0">{currency}</span>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={budgetInput}
+                onChange={(e) => setBudgetInput(e.target.value)}
+                placeholder="e.g. 2000"
+                autoFocus
+                className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                onClick={saveBudget}
+                disabled={savingBudget}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-lg disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => { setEditingBudget(false); setBudgetError(''); }}
+                className="px-3 py-1.5 text-gray-400 hover:text-white text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+            {budgetError && <p className="text-xs text-red-400 mt-1">{budgetError}</p>}
+          </>
         )}
 
         {/* Budget summary */}
@@ -255,6 +278,7 @@ export function BudgetTracker({ tripId, userId, budget, onBudgetChange }: Budget
 
       {/* Add expense form */}
       <form onSubmit={addExpense} className="p-4 border-t border-gray-800 space-y-2">
+        {expenseError && <p className="text-xs text-red-400">{expenseError}</p>}
         <div className="flex gap-2">
           <select
             value={newCategory}

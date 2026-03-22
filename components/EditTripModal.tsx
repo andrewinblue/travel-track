@@ -15,6 +15,7 @@ interface EditTripModalProps {
 export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     title: trip.title,
     destination: trip.destination,
@@ -30,9 +31,30 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (form.title.trim().length === 0) errs.title = 'Title is required';
+    else if (form.title.length > 100) errs.title = 'Title must be under 100 characters';
+    if (form.destination.trim().length === 0) errs.destination = 'Destination is required';
+    if (form.country.trim().length === 0) errs.country = 'Country is required';
+    if (!form.startDate) errs.startDate = 'Start date is required';
+    if (!form.endDate) errs.endDate = 'End date is required';
+    if (form.startDate && form.endDate && form.startDate > form.endDate) {
+      errs.endDate = 'End date must be on or after start date';
+    }
+    if (form.description.length > 500) errs.description = 'Description must be under 500 characters';
+    if (form.budget) {
+      const budgetVal = parseFloat(form.budget);
+      if (isNaN(budgetVal) || budgetVal < 0) errs.budget = 'Budget must be a positive number';
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db) return;
+    if (!validate()) return;
     setLoading(true);
     try {
       const budgetVal = parseFloat(form.budget);
@@ -79,8 +101,10 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
               value={form.title}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+              maxLength={100}
+              className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm ${errors.title ? 'border-red-500' : 'border-gray-700'}`}
             />
+            {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -91,8 +115,9 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
                 value={form.destination}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+                className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm ${errors.destination ? 'border-red-500' : 'border-gray-700'}`}
               />
+              {errors.destination && <p className="text-xs text-red-400 mt-1">{errors.destination}</p>}
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1.5">Country *</label>
@@ -101,8 +126,9 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
                 value={form.country}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+                className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm ${errors.country ? 'border-red-500' : 'border-gray-700'}`}
               />
+              {errors.country && <p className="text-xs text-red-400 mt-1">{errors.country}</p>}
             </div>
           </div>
 
@@ -115,8 +141,9 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
                 value={form.startDate}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm"
+                className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm ${errors.startDate ? 'border-red-500' : 'border-gray-700'}`}
               />
+              {errors.startDate && <p className="text-xs text-red-400 mt-1">{errors.startDate}</p>}
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1.5">End Date *</label>
@@ -127,8 +154,9 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
                 onChange={handleChange}
                 required
                 min={form.startDate}
-                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm"
+                className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm ${errors.endDate ? 'border-red-500' : 'border-gray-700'}`}
               />
+              {errors.endDate && <p className="text-xs text-red-400 mt-1">{errors.endDate}</p>}
             </div>
           </div>
 
@@ -156,8 +184,9 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
               min="0"
               step="any"
               placeholder="e.g. 2000"
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+              className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm ${errors.budget ? 'border-red-500' : 'border-gray-700'}`}
             />
+            {errors.budget && <p className="text-xs text-red-400 mt-1">{errors.budget}</p>}
           </div>
 
           <div>
@@ -168,8 +197,10 @@ export function EditTripModal({ trip, onClose, onUpdated }: EditTripModalProps) 
               onChange={handleChange}
               rows={3}
               placeholder="What's this trip about?"
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm resize-none"
+              maxLength={500}
+              className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm resize-none ${errors.description ? 'border-red-500' : 'border-gray-700'}`}
             />
+            {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description}</p>}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

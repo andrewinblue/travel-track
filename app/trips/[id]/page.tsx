@@ -416,19 +416,19 @@ export default function TripDetailPage() {
         {/* Budget tracker */}
         <BudgetTracker
           tripId={tripId}
-          userId={user.uid}
+          userId={user!.uid}
           budget={trip.budget}
           onBudgetChange={(b) => setTrip((prev) => prev ? { ...prev, budget: b } : prev)}
         />
 
         {/* Packing list */}
-        <PackingList tripId={tripId} userId={user.uid} />
+        <PackingList tripId={tripId} userId={user!.uid} />
 
         {/* Photo gallery */}
         <PhotoGallery activities={activities} />
 
         {/* Notes & Journal */}
-        <TripNotes tripId={tripId} userId={user.uid} />
+        <TripNotes tripId={tripId} userId={user!.uid} />
 
         {/* Activities section */}
         <div className="flex items-center justify-between mb-5">

@@ -45,6 +45,7 @@ export function EditActivityModal({
   const { user } = useAuth();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   // Existing photos still kept (user can remove them)
   const [keepUrls, setKeepUrls] = useState<string[]>(getPhotos(activity));
   // New files selected by the user
@@ -63,9 +64,24 @@ export function EditActivityModal({
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (form.title.trim().length === 0) errs.title = 'Title is required';
+    else if (form.title.length > 100) errs.title = 'Title must be under 100 characters';
+    if (!form.date) errs.date = 'Date is required';
+    else if (form.date < tripStartDate || form.date > tripEndDate) {
+      errs.date = 'Date must be within the trip dates';
+    }
+    if (form.location.length > 200) errs.location = 'Location must be under 200 characters';
+    if (form.notes.length > 1000) errs.notes = 'Notes must be under 1000 characters';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !db) return;
+    if (!validate()) return;
 
     setLoading(true);
     try {
@@ -126,8 +142,10 @@ export function EditActivityModal({
               value={form.title}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm"
+              maxLength={100}
+              className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm ${errors.title ? 'border-red-500' : 'border-gray-700'}`}
             />
+            {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -156,8 +174,9 @@ export function EditActivityModal({
                 required
                 min={tripStartDate}
                 max={tripEndDate}
-                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm"
+                className={`w-full px-3 py-2.5 bg-gray-800 border rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm ${errors.date ? 'border-red-500' : 'border-gray-700'}`}
               />
+              {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date}</p>}
             </div>
           </div>
 
