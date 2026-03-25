@@ -45,6 +45,39 @@ export function DashboardSkeleton() {
   );
 }
 
+export function CalendarSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <Pulse className="h-7 w-40" />
+        <div className="flex items-center gap-2">
+          <Pulse className="h-8 w-16" />
+          <Pulse className="h-8 w-8" />
+          <Pulse className="h-8 w-8" />
+        </div>
+      </div>
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-gray-800">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="px-2 py-2.5 flex justify-center">
+              <Pulse className="h-4 w-8" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {[...Array(42)].map((_, i) => (
+            <div key={i} className="min-h-[100px] border-b border-r border-gray-800 p-1.5">
+              <Pulse className="h-4 w-4 mb-2" />
+              {i % 5 === 0 && <Pulse className="h-3.5 w-full mb-0.5" />}
+              {i % 7 === 2 && <Pulse className="h-3.5 w-3/4" />}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TripPageSkeleton() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
